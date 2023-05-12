@@ -38,38 +38,36 @@ def main(argv=None):
 
     # merge
 
-    print(' * Building ' + output)
+    print(f' * Building {output}')
 
     # enable sourcemaps support
 
     if args.sourcemaps:
-        sourcemap = output + '.map'
+        sourcemap = f'{output}.map'
         sourcemapping = '\n//@ sourceMappingURL=' + sourcemap
-        sourcemapargs = ' --create_source_map ' + sourcemap + ' --source_map_format=V3'
+        sourcemapargs = f' --create_source_map {sourcemap} --source_map_format=V3'
     else:
         sourcemap = sourcemapping = sourcemapargs = ''
 
     fd, path = tempfile.mkstemp()
-    tmp = open(path, 'w')
-    sources = []
+    with open(path, 'w') as tmp:
+        sources = []
 
-    if args.amd:
-        tmp.write('( function ( root, factory ) {\n\n\tif ( typeof define === \'function\' && define.amd ) {\n\n\t\tdefine( [ \'exports\' ], factory );\n\n\t} else if ( typeof exports === \'object\' ) {\n\n\t\tfactory( exports );\n\n\t} else {\n\n\t\tfactory( root );\n\n\t}\n\n}( this, function ( exports ) {\n\n')
+        if args.amd:
+            tmp.write('( function ( root, factory ) {\n\n\tif ( typeof define === \'function\' && define.amd ) {\n\n\t\tdefine( [ \'exports\' ], factory );\n\n\t} else if ( typeof exports === \'object\' ) {\n\n\t\tfactory( exports );\n\n\t} else {\n\n\t\tfactory( root );\n\n\t}\n\n}( this, function ( exports ) {\n\n')
 
-    for include in args.include:
-        with open( include + '.json','r') as f:
-            files = json.load(f)
-        for filename in files:
-            filename = '../' + filename;
-            sources.append(filename)
-            with open(filename, 'r') as f:
-                tmp.write(f.read())
-                tmp.write('\n')
+        for include in args.include:
+            with open(f'{include}.json', 'r') as f:
+                files = json.load(f)
+            for filename in files:
+                filename = f'../{filename}';
+                sources.append(filename)
+                with open(filename, 'r') as f:
+                    tmp.write(f.read())
+                    tmp.write('\n')
 
-    if args.amd:
-        tmp.write('exports.UIL = UIL;\n\n} ) );')
-
-    tmp.close()
+        if args.amd:
+            tmp.write('exports.UIL = UIL;\n\n} ) );')
 
     # save
 
@@ -82,7 +80,7 @@ def main(argv=None):
         externs = ' --externs '.join(args.externs)
         nocheckvars = "--jscomp_off=checkVars" if args.nocheckvars is True else ""
         source = ' '.join(sources)
-        cmd = 'java -jar closure-compiler/closure-compiler-v20161024.jar --warning_level=VERBOSE --jscomp_off=globalThis %s --externs %s --jscomp_off=checkTypes --language_in=ECMASCRIPT5_STRICT --js %s --js_output_file %s %s' % (nocheckvars, externs, source, output, sourcemapargs)
+        cmd = f'java -jar closure-compiler/closure-compiler-v20161024.jar --warning_level=VERBOSE --jscomp_off=globalThis {nocheckvars} --externs {externs} --jscomp_off=checkTypes --language_in=ECMASCRIPT5_STRICT --js {source} --js_output_file {output} {sourcemapargs}'
         os.system(cmd)
 
         # header
